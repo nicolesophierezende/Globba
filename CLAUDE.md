@@ -10,6 +10,7 @@ Globba is a mobile-first web app (PWA) that maps international grocery stores in
 - Free tools only. Built one feature at a time with AI.
 
 ## Where things are
+All app code is in the `globba-app/` folder (run npm commands there). Paths below are inside it, except `prototype/`, `netlify.toml` and `.github/` which are at the top.
 - `src/pages/index.astro` – the map app page (markup identical to the original prototype in `prototype/index.html`).
 - `src/styles/app.css` – the app's styles (copied unchanged from the prototype). Design: colorful but clean, mobile first.
 - `src/scripts/app.js` – the app logic: map, pins, region chips, product search (synonyms, typo tolerance), store sheet, language switch, "request this product".
