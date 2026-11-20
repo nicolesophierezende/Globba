@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Globba – negozi internazionali a Torino</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAF9FC; --surface:#FFFFFF; --ink:#2A0E45; --muted:#5E5373; --line:#C6E8F0;
+  --primary:#551B81; --on-primary:#FFFFFF; --accent:#FF8C1E; --sun:#F5CE24; --berry:#BA3F6A;
+  --chip:#D8F6FC; --focus:#BA3F6A;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px}
+
+.app{display:flex;flex-direction:column;min-height:100%}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
+.logo{color:var(--primary);font-weight:800;font-size:30px;letter-spacing:-.03em;line-height:1;display:flex;align-items:center}
+.logo .o{display:inline-block;width:.62em;height:.62em;border-radius:50%;margin:0 .02em;transform:translateY(.06em);
+  background:conic-gradient(#FF8C1E 0 60deg,#BA3F6A 0 120deg,#F5CE24 0 180deg,#14918A 0 240deg,#551B81 0 300deg,#3B82C4 0)}
+.tagline{color:var(--muted);font-size:14px;margin-top:2px}
+.lang{margin-left:auto;display:flex;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:999px;padding:3px}
+.lang button{border:0;background:transparent;padding:5px 11px;border-radius:999px;font-weight:700;font-size:13px}
+.lang button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
+
+.searchwrap{padding:0 16px 10px;position:relative}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:0 12px;height:52px}
+.search:focus-within{border-color:var(--primary)}
+.search input{flex:1;border:0;background:transparent;outline:none;font-size:17px;min-width:0}
+.search input::placeholder{color:var(--muted)}
+.iconbtn{border:0;background:transparent;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none}
+.iconbtn:hover{background:var(--chip)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px}
+.chip{flex:none;display:flex;align-items:center;gap:7px;border:2px solid transparent;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:999px;padding:6px 13px 6px 9px;font-size:14px;font-weight:500;white-space:nowrap}
+.chip .dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 2px var(--surface)}
+.chip[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);box-shadow:none;font-weight:700}
+
+main{display:flex;flex-direction:column;flex:1}
+.side{display:contents}
+header.top{order:0}.searchwrap{order:1}.chips{order:2}.mapbox{order:3}.panel{order:4}
+.mapbox{position:relative;height:56vh;min-height:320px;overflow:hidden;background:var(--chip);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#lmap{position:absolute;inset:0;background:var(--chip);font:inherit}
+.pin{display:block;width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(42,14,69,.4);transition:transform .15s}
+.pin:hover{transform:scale(1.15)}
+.pin.sel{transform:scale(1.35);border-color:#fff;box-shadow:0 0 0 3px #551B81,0 3px 10px rgba(42,14,69,.5)}
+.pin.dim{opacity:.3}
+.cluster{display:grid!important;place-items:center;border-radius:50%;background:#fff;color:#551B81;font-weight:800;font-size:15px;border:3px solid #551B81;box-shadow:0 2px 8px rgba(42,14,69,.4)}
+.cluster.dim{opacity:.35}
+.me{display:block;width:18px;height:18px;border-radius:50%;background:#2F7DF6;border:3px solid #fff;box-shadow:0 0 0 7px rgba(47,125,246,.22)}
+.leaflet-bar a{width:40px!important;height:40px!important;line-height:40px!important;font-size:20px!important;color:#2A0E45!important}
+.resetbtn{position:absolute;left:10px;top:96px;z-index:1000;width:40px;height:40px;display:grid;place-items:center;background:#fff;color:#2A0E45;border:2px solid rgba(0,0,0,.2);border-radius:4px;background-clip:padding-box}
+.mapmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:999;width:min(340px,calc(100% - 32px));background:var(--surface);color:var(--ink);border-radius:18px;padding:16px 18px;box-shadow:0 6px 24px rgba(42,14,69,.25);font-size:15px}
+.mapmsg strong{display:block;margin-bottom:4px;font-size:16px}
+.leaflet-container{background:var(--chip)}
+.nearbtn{position:absolute;left:12px;bottom:28px;z-index:1000;display:flex;align-items:center;gap:8px;border:0;background:var(--accent);color:#2A0E45;border-radius:999px;padding:10px 16px 10px 12px;font-weight:700;box-shadow:0 3px 10px rgba(42,14,69,.3)}
+[hidden]{display:none!important}
+input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.toast{z-index:1000;position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 14px;border-radius:12px;font-size:14px;max-width:calc(100% - 90px);text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+
+.panel{padding:14px 16px 28px;background:var(--bg)}
+.panelhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.panelhead h2{font-size:20px;margin:0;font-weight:700;letter-spacing:-.01em}
+.panelhead .sub{color:var(--muted);font-size:14px}
+.linkbtn{border:0;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-weight:500;padding:4px 0}
+
+.store{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.store:last-child{border-bottom:0}
+.store .main{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0}
+.store .name{font-weight:700;font-size:17px;line-height:1.25}
+.store .meta{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.swatch{flex:none;width:16px;height:16px;border-radius:50%}
+.dist{flex:none;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.product{background:var(--surface);border-radius:18px;padding:14px 14px 6px;margin-bottom:12px;border:1px solid var(--line)}
+.product h3{margin:0;font-size:19px;letter-spacing:-.01em}
+.product .aka{color:var(--muted);font-size:14px;margin:2px 0 6px}
+.avail{flex:none;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.avail.u{background:#D8F0E3;color:#145A36}
+.avail.s{background:#FCEBC8;color:#7A4B00}
+.avail.z{background:#E5E0F5;color:#4B3487}
+.empty{background:var(--surface);border:2px dashed var(--line);border-radius:18px;padding:20px;text-align:left}
+.empty p{margin:0 0 4px}
+.empty .hint{color:var(--muted);font-size:14px;margin-bottom:14px}
+.primary{border:0;background:var(--primary);color:var(--on-primary);border-radius:12px;padding:11px 16px;font-weight:700}
+.note{color:var(--muted);font-size:13px;margin-top:18px}
+
+/* Store sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,20,30,.38);opacity:0;pointer-events:none;transition:opacity .2s;z-index:2000}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow:auto;background:var(--surface);border-radius:22px 22px 0 0;z-index:2001;transform:translateY(105%);transition:transform .25s ease;padding:0 18px calc(22px + env(safe-area-inset-bottom,0px))}
+.sheet.on{transform:none}
+.sheet .bar{height:8px;margin:0 -18px 14px;border-radius:22px 22px 0 0}
+.sheet .grab{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 10px}
+.sheet h2{font-size:26px;line-height:1.1;margin:0 40px 6px 0;letter-spacing:-.02em;font-weight:800}
+.sheet .close{position:absolute;right:12px;top:20px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tag{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:500;background:var(--chip);border-radius:999px;padding:4px 10px 4px 7px}
+.tag .dot{width:10px;height:10px;border-radius:50%}
+.rows{display:grid;gap:8px;margin:4px 0 14px;font-size:15px}
+.rows div{display:flex;gap:10px;align-items:flex-start}
+.rows svg{flex:none;margin-top:2px;color:var(--muted)}
+.stale{background:#FCEBC8;color:#6B4100;border-radius:12px;padding:9px 12px;font-size:14px;margin-bottom:12px}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.actions a,.actions button{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--ink);background:var(--chip);border:0;border-radius:14px;padding:10px 4px;font-size:12.5px;font-weight:700}
+.sheet h3{font-size:17px;margin:0 0 8px}
+.instore{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:14px;padding:0 10px;height:46px;margin-bottom:6px}
+.instore:focus-within{border-color:var(--primary)}
+.instore input{flex:1;border:0;background:transparent;outline:none;min-width:0}
+.plist .prow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.plist .prow.hit{background:linear-gradient(90deg,rgba(245,206,36,.32),transparent);border-radius:10px;padding-left:8px}
+.plist .prow:last-child{border-bottom:0}
+.plist .pn{font-weight:500}
+.plist .ps{color:var(--muted);font-size:13px}
+
+@media (min-width:900px){
+  .app{height:100%}
+  main{flex-direction:row;min-height:0}
+  .mapbox{flex:1;height:auto;border:0;border-left:1px solid var(--line)}
+  .side{background:var(--bg)}
+  .side{width:410px;display:flex;flex-direction:column;min-height:0;order:0}
+  .panel{overflow:auto;flex:1}
+  .sheet{left:auto;right:16px;bottom:16px;top:16px;width:400px;max-height:none;border-radius:22px;transform:translateX(calc(100% + 30px))}
+  .sheet .bar{border-radius:22px 22px 0 0}
+  .sheet .grab{display:none}
+  .scrim{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <main>
+    <div class="mapbox" id="map" aria-label="Mappa">
+      <div id="lmap"></div>
+      <button class="resetbtn" id="reset" aria-label="Torino">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+      <div class="mapmsg" id="mapmsg" hidden role="status"></div>
+      <button class="nearbtn" id="near">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span id="nearlbl"></span>
+      </button>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+    <div class="side">
+      <header class="top">
+        <div>
+          <div class="logo" aria-label="Globba">Gl<span class="o" aria-hidden="true"></span>bba</div>
+          <div class="tagline" id="tagline"></div>
+        </div>
+        <div class="lang" role="group" aria-label="Lingua / Language">
+          <button data-l="it">IT</button><button data-l="en">EN</button>
+        </div>
+      </header>
+      <div class="searchwrap">
+        <label class="search">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.5-4.5"/></svg>
+          <input id="q" type="search" autocomplete="off" enterkeyhint="search">
+          <button class="iconbtn" id="qclear" hidden aria-label="×"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </label>
+      </div>
+      <div class="chips" id="chips" role="group"></div>
+      <section class="panel" id="panel" aria-live="polite"></section>
+    </div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="false" aria-labelledby="sheettitle"></aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script>
+(function(){
+// ---------- Data (sample, invented for the prototype) ----------
+const R={
+  latam:{c:'#FF8C1E',it:'America Latina',en:'Latin America'},
+  asia:{c:'#BA3F6A',it:'Asia orientale',en:'East Asia'},
+  south:{c:'#F5CE24',it:'Asia del Sud',en:'South Asia'},
+  mena:{c:'#14918A',it:'Medio Oriente e Maghreb',en:'Middle East & Maghreb'},
+  africa:{c:'#551B81',it:'Africa',en:'Africa'},
+  east:{c:'#3B82C4',it:'Est Europa',en:'Eastern Europe'}
+};
+const P={
+  masa:{it:'Farina di mais nixtamalizzato',en:'Masa harina',s:['masa harina','maseca','harina de maiz','nixtamal']},
+  aji:{it:'Ají amarillo',en:'Ají amarillo paste',s:['aji amarillo','pasta di peperoncino giallo','yellow chili paste']},
+  yuca:{it:'Manioca',en:'Cassava',s:['yuca','mandioca','cassava','manioca']},
+  platano:{it:'Platano verde',en:'Green plantain',s:['platano','plantain','banana da cuocere','plátano macho']},
+  frijoles:{it:'Fagioli neri',en:'Black beans',s:['frijoles negros','feijao preto','black beans']},
+  tortillas:{it:'Tortillas di mais',en:'Corn tortillas',s:['tortilla','tortillas de maiz']},
+  yerba:{it:'Yerba mate',en:'Yerba mate',s:['mate','erva mate']},
+  kimchi:{it:'Kimchi',en:'Kimchi',s:['cavolo fermentato coreano','김치']},
+  gochujang:{it:'Gochujang',en:'Gochujang',s:['pasta di peperoncino coreana','korean chili paste']},
+  miso:{it:'Miso',en:'Miso paste',s:['pasta di miso','shiro miso']},
+  noodle:{it:'Noodles di riso',en:'Rice noodles',s:['vermicelli di riso','rice vermicelli','bun','pho noodles']},
+  fishsauce:{it:'Salsa di pesce',en:'Fish sauce',s:['nuoc mam','nam pla','patis']},
+  tofu:{it:'Tofu',en:'Tofu',s:['tofu fresco','bean curd','doufu']},
+  basmati:{it:'Riso basmati',en:'Basmati rice',s:['basmati','chawal']},
+  paneer:{it:'Paneer',en:'Paneer',s:['formaggio indiano','indian cheese']},
+  garam:{it:'Garam masala',en:'Garam masala',s:['masala','mix di spezie indiane']},
+  ghee:{it:'Ghee',en:'Ghee',s:['burro chiarificato','clarified butter']},
+  atta:{it:'Farina atta',en:'Atta flour',s:['chapati flour','farina per chapati','atta']},
+  harissa:{it:'Harissa',en:'Harissa',s:['pasta di peperoncino tunisina']},
+  couscous:{it:'Couscous',en:'Couscous',s:['cuscus','kuskus','semola']},
+  tahini:{it:'Tahina',en:'Tahini',s:['tahin','crema di sesamo','sesame paste']},
+  bulgur:{it:'Bulgur',en:'Bulgur',s:['burghul','grano spezzato','bulgur pilavlik']},
+  halloumi:{it:'Halloumi',en:'Halloumi',s:['hellim','formaggio cipriota']},
+  dates:{it:'Datteri',en:'Dates',s:['medjool','tamr','datteri deglet nour']},
+  gari:{it:'Gari',en:'Gari',s:['farina di manioca','fufu','cassava flakes']},
+  palmoil:{it:'Olio di palma rosso',en:'Red palm oil',s:['zomi','dende','palm oil']},
+  egusi:{it:'Semi di egusi',en:'Egusi seeds',s:['egusi','semi di melone']},
+  smetana:{it:'Smetana',en:'Smetana',s:['panna acida','sour cream','smântână']},
+  kvass:{it:'Kvas',en:'Kvass',s:['kvass','квас','bevanda di pane']},
+  ajvar:{it:'Ajvar',en:'Ajvar',s:['crema di peperoni','pepper relish']},
+  buckwheat:{it:'Grano saraceno',en:'Buckwheat',s:['grechka','kasha','hrisca','гречка']},
+  sauer:{it:'Crauti',en:'Sauerkraut',s:['varza murata','kiseli kupus','cavolo acido']}
+};
+const S=[
+  {id:'el-condor',n:'Mercado El Cóndor',r:['latam'],a:'Via Nizza 112',lat:45.0505,lng:7.6745,ph:'+39 011 555 0101',chk:'2026-11-12',h:['Lun–Sab 9–20, Dom 10–13','Mon–Sat 9–20, Sun 10–13'],inv:{masa:'u',aji:'u',yuca:'s',platano:'u',frijoles:'u',tortillas:'u',yerba:'s'}},
+  {id:'sabor-latino',n:'Tienda Sabor Latino',r:['latam'],a:'Corso Giulio Cesare 48',lat:45.0840,lng:7.6890,ph:'+39 011 555 0102',chk:'2026-11-03',h:['Tutti i giorni 9–21','Every day 9–21'],inv:{masa:'s',platano:'u',frijoles:'u',tortillas:'s',aji:'s'}},
+  {id:'casa-brasil',n:'Casa Brasil Empório',r:['latam'],a:'Via Cibrario 70',lat:45.0770,lng:7.6620,ph:'+39 011 555 0103',chk:'2026-10-28',h:['Mar–Sab 10–19:30','Tue–Sat 10–19:30'],inv:{yerba:'u',frijoles:'u',yuca:'u',platano:'s'}},
+  {id:'seoul-mart',n:'Seoul Mart Torino',r:['asia'],a:'Via Madama Cristina 55',lat:45.0540,lng:7.6820,ph:'+39 011 555 0104',chk:'2026-11-15',h:['Lun–Sab 10–20','Mon–Sat 10–20'],inv:{kimchi:'u',gochujang:'u',miso:'u',tofu:'u',noodle:'s'}},
+  {id:'asia-porta-palazzo',n:'Asia Market Porta Palazzo',r:['asia'],a:'Corso Regina Margherita 140',lat:45.0780,lng:7.6800,ph:'+39 011 555 0105',chk:'2026-11-10',h:['Tutti i giorni 8:30–20','Every day 8:30–20'],inv:{tofu:'u',noodle:'u',fishsauce:'u',miso:'u',kimchi:'s',basmati:'s'}},
+  {id:'mekong',n:'Mekong Alimentari',r:['asia'],a:'Via Sacchi 30',lat:45.0592,lng:7.6763,ph:'+39 011 555 0106',chk:'2026-08-30',h:['Lun–Sab 9:30–19:30','Mon–Sat 9:30–19:30'],inv:{noodle:'u',fishsauce:'u',tofu:'s'}},
+  {id:'bombay-spice',n:'Bombay Spice Bazar',r:['south'],a:'Via Saluzzo 40',lat:45.0566,lng:7.6795,ph:'+39 011 555 0107',chk:'2026-11-08',h:['Tutti i giorni 10–21','Every day 10–21'],inv:{basmati:'u',paneer:'s',garam:'u',ghee:'u',atta:'u'}},
+  {id:'dhaka-grocery',n:'Dhaka Grocery',r:['south'],a:'Corso Vercelli 60',lat:45.0950,lng:7.6970,ph:'+39 011 555 0108',chk:'2026-10-20',h:['Tutti i giorni 9–22','Every day 9–22'],inv:{basmati:'u',atta:'u',ghee:'u',garam:'u',dates:'z'}},
+  {id:'al-andalus',n:'Al Andalus Market',r:['mena'],a:'Corso Palermo 38',lat:45.0880,lng:7.6950,ph:'+39 011 555 0109',chk:'2026-11-14',h:['Tutti i giorni 8–21','Every day 8–21'],inv:{harissa:'u',couscous:'u',tahini:'u',bulgur:'u',dates:'z'}},
+  {id:'beirut-delizie',n:'Beirut Delizie',r:['mena'],a:'Via Nizza 30',lat:45.0598,lng:7.6772,ph:'+39 011 555 0110',chk:'2026-11-01',h:['Lun–Sab 9–20','Mon–Sat 9–20'],inv:{tahini:'u',halloumi:'u',bulgur:'u',dates:'s'}},
+  {id:'afro-dakar',n:'Afro Shop Dakar',r:['africa'],a:'Via Cigna 54',lat:45.0920,lng:7.6880,ph:'+39 011 555 0111',chk:'2026-11-06',h:['Lun–Sab 9:30–20','Mon–Sat 9:30–20'],inv:{gari:'u',palmoil:'u',egusi:'s',platano:'u',yuca:'u'}},
+  {id:'lagos-caribe',n:'Lagos & Caribe Food',r:['africa','latam'],a:'Corso Giulio Cesare 120',lat:45.0925,lng:7.6935,ph:'+39 011 555 0112',chk:'2026-11-16',h:['Tutti i giorni 9–21','Every day 9–21'],inv:{gari:'u',palmoil:'u',platano:'u',yuca:'u',frijoles:'s',egusi:'u'}},
+  {id:'carpati',n:'Magazin Românesc Carpați',r:['east'],a:'Via Chiesa della Salute 10',lat:45.0990,lng:7.6750,ph:'+39 011 555 0113',chk:'2026-11-11',h:['Lun–Dom 8–20','Mon–Sun 8–20'],inv:{smetana:'u',sauer:'u',buckwheat:'u',ajvar:'s',kvass:'s'}},
+  {id:'bazar-balcani',n:'Bazar Balcani',r:['east','mena'],a:'Corso Francia 150',lat:45.0760,lng:7.6420,ph:'+39 011 555 0114',chk:'2026-10-25',h:['Lun–Sab 9–19:30','Mon–Sat 9–19:30'],inv:{ajvar:'u',halloumi:'s',bulgur:'u',sauer:'s'}},
+  {id:'global-halal',n:'Global Halal Market',r:['mena','south'],a:'Corso Racconigi 20',lat:45.0710,lng:7.6520,ph:'+39 011 555 0115',chk:'2026-11-09',h:['Tutti i giorni 8:30–21','Every day 8:30–21'],inv:{basmati:'u',dates:'z',harissa:'s',couscous:'u',tahini:'u',ghee:'s'}},
+  {id:'kyiv-delikates',n:'Kyiv Delikates',r:['east'],a:'Via Nizza 250',lat:45.0400,lng:7.6690,ph:'+39 011 555 0116',chk:'2026-11-13',h:['Mar–Dom 9–19','Tue–Sun 9–19'],inv:{buckwheat:'u',smetana:'u',kvass:'u',sauer:'u'}}
+];
+const TODAY=new Date('2026-11-20T12:00:00');
+
+// ---------- Text ----------
+const T={
+ it:{tag:'Il tuo mondo, dietro l’angolo',ph:'Cerca un prodotto: kimchi, masa harina, ghee…',all:'Tutte',stores:n=>n===1?'1 negozio':`${n} negozi`,
+  near:'Vicino a me',directions:'Percorso',call:'Chiama',wa:'WhatsApp',share:'Copia link',copied:'Link copiato',
+  checked:'Verificato',ago:d=>d<=0?'oggi':d===1?'ieri':`${d} giorni fa`,stale:'Dati verificati più di 60 giorni fa: meglio chiamare prima di andare.',
+  products:'Prodotti principali',searchHere:'Cerca un prodotto qui…',
+  noRes:q=>`Nessun prodotto trovato per “${q}”.`,reqHint:'Dicci cosa cerchi: ci aiuta a sapere cosa chiedere ai negozi.',request:'Richiedi questo prodotto',requested:'Richiesta salvata. Grazie!',
+  foundIn:n=>n===1?'In 1 negozio':`In ${n} negozi`,notHere:'Questo prodotto non risulta qui.',
+  av:{u:'Di solito disponibile',s:'A volte',z:'Stagionale'},locating:'Cerco la tua posizione…',locFail:'Posizione non disponibile: controlla i permessi del browser.',
+  outside:'Sei fuori Torino: ti mostro la città.',sample:'Prototipo: i negozi sono esempi inventati, non reali.',close:'Chiudi',
+  noFilter:'Nessun negozio per questi filtri.',results:'Prodotti trovati',showAll:'Mostra tutti',filters:'Filtra per regione',
+  inStore:n=>`Cerca un prodotto da ${n}`,zin:'Ingrandisci',zout:'Riduci',map:'Mappa di Torino',dec:',',reset:'Torna a tutta Torino',noMapT:'La mappa non si è caricata',noMap:'Questo browser o anteprima blocca le immagini della mappa. Apri il file direttamente nel browser oppure pubblicalo su Netlify: le strade appariranno.'},
+ en:{tag:'Your world, around the corner',ph:'Search a product: kimchi, masa harina, ghee…',all:'All',stores:n=>n===1?'1 store':`${n} stores`,
+  near:'Near me',directions:'Directions',call:'Call',wa:'WhatsApp',share:'Copy link',copied:'Link copied',
+  checked:'Checked',ago:d=>d<=0?'today':d===1?'yesterday':`${d} days ago`,stale:'Last checked over 60 days ago: call before you go.',
+  products:'Key products',searchHere:'Search a product here…',
+  noRes:q=>`No products found for “${q}”.`,reqHint:'Tell us what you’re looking for: it helps us know what to ask stores.',request:'Request this product',requested:'Request saved. Thank you!',
+  foundIn:n=>n===1?'In 1 store':`In ${n} stores`,notHere:'This product isn’t listed here.',
+  av:{u:'Usually in stock',s:'Sometimes',z:'Seasonal'},locating:'Finding your location…',locFail:'Location unavailable: check your browser permissions.',
+  outside:'You’re outside Turin, so here’s the city.',sample:'Prototype: stores are invented examples, not real.',close:'Close',
+  noFilter:'No stores match these filters.',results:'Products found',showAll:'Show all',filters:'Filter by region',
+  inStore:n=>`Search a product at ${n}`,zin:'Zoom in',zout:'Zoom out',map:'Map of Turin',dec:'.',reset:'Back to all of Turin',noMapT:'The map didn’t load',noMap:'This browser or preview blocks the map images. Open the file directly in your browser or put it on Netlify, and the streets will appear.'}
+};
+let lang='it';
+try{const s=localStorage.getItem('globba-lang');if(s==='en'||s==='it')lang=s;}catch(e){}
+const t=()=>T[lang];
+
+// ---------- Helpers ----------
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{N} ]/gu,' ').replace(/\s+/g,' ').trim();
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
+const pname=id=>P[id][lang];
+const pterms=id=>[P[id].it,P[id].en,...P[id].s].map(norm);
+function matchProducts(q){
+  q=norm(q);if(q.length<2)return[];
+  const tol=q.length>=7?2:q.length>=4?1:0,out=[];
+  for(const id in P){let best=99;
+    for(const term of pterms(id)){
+      if(term.startsWith(q)){best=Math.min(best,0);continue;}
+      if(term.includes(q)){best=Math.min(best,1);continue;}
+      if(!tol)continue;
+      for(const w of term.split(' ').concat(term)){
+        const d=Math.min(lev(q,w),w.length>q.length?lev(q,w.slice(0,q.length)):99);
+        if(d<=tol)best=Math.min(best,2+d);
+      }}
+    if(best<99)out.push({id,score:best});}
+  return out.sort((a,b)=>a.score-b.score||pname(a.id).localeCompare(pname(b.id))).map(o=>o.id);
+}
+const daysAgo=d=>Math.round((TODAY-new Date(d+'T12:00:00'))/864e5);
+function km(a,b){const r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r;const x=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 12742*Math.asin(Math.sqrt(x));}
+function fmtDist(s){if(!me)return'';const d=km(me,s);return d<1?`${Math.round(d*100)*10} m`:`${d.toFixed(1).replace('.',t().dec)} km`;}
+const fill=r=>r.length===1?R[r[0]].c:`conic-gradient(${R[r[0]].c} 0 50%, ${R[r[1]].c} 0)`;
+const swatch=r=>`<span class="swatch" style="background:${fill(r)}" aria-hidden="true"></span>`;
+const regionNames=r=>r.map(k=>R[k][lang]).join(', ');
+
+// ---------- State ----------
+let active=new Set(), query='', selected=null, me=null;
+const storeOk=s=>!active.size||s.r.some(k=>active.has(k));
+
+// ---------- Map (Leaflet + OpenStreetMap) ----------
+const mapEl=$('#map');
+const TURIN=[45.0694,7.6861];
+const START_Z=()=>innerWidth<600?13:14;
+const map=L.map('lmap',{zoomControl:false,zoomSnap:0.5,zoomDelta:1,wheelPxPerZoomLevel:90,minZoom:11,maxZoom:19,
+  maxBounds:[[44.93,7.45],[45.20,7.90]],maxBoundsViscosity:0.8}).setView(TURIN,START_Z());
+L.control.zoom({position:'topleft'}).addTo(map);
+const ATTR='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const CARTO={name:'carto',url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',o:{subdomains:'abcd',maxZoom:20,attribution:ATTR+' &copy; <a href="https://carto.com/attributions">CARTO</a>'}};
+const ESRI={name:'esri',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',o:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, '+ATTR}};
+const OSMFR={name:'osmfr',url:'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',o:{subdomains:'abc',maxZoom:19,attribution:ATTR+' &copy; OSM France'}};
+const OSM={name:'osm',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',o:{maxZoom:19,attribution:ATTR}};
+// Opened as a local file, some map services refuse to answer, so start with the ones that don't mind.
+const SOURCES=location.protocol==='file:'?[ESRI,OSMFR,CARTO,OSM]:[CARTO,ESRI,OSMFR,OSM];
+let srcIdx=0,tiles=null,loaded=0,failed=0,waitT=null;
+function nextSource(){ if(srcIdx<SOURCES.length-1)useSource(srcIdx+1); else $('#mapmsg').hidden=false; }
+function useSource(i){
+  if(tiles)map.removeLayer(tiles);
+  clearTimeout(waitT);loaded=0;failed=0;srcIdx=i;
+  const src=SOURCES[i];
+  tiles=L.tileLayer(src.url,src.o).addTo(map);
+  tiles.on('tileload',()=>{loaded++;clearTimeout(waitT);$('#mapmsg').hidden=true;});
+  tiles.on('tileerror',()=>{failed++;if(!loaded&&failed>=3)nextSource();});
+  waitT=setTimeout(()=>{if(!loaded)nextSource();},6000);
+  console.info('Globba map source:',src.name);
+}
+useSource(0);
+const cluster=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:42,
+  iconCreateFunction:c=>L.divIcon({html:String(c.getChildCount()),className:'cluster'+(query?' dim':''),iconSize:[40,40]})});
+const loose=L.layerGroup();
+map.addLayer(cluster);map.addLayer(loose);
+let meMarker=null;
+function render(){
+  cluster.clearLayers();loose.clearLayers();
+  const hits=query?new Set(storesFor(matchProducts(query)).map(s=>s.id)):null;
+  for(const s of S.filter(storeOk)){
+    const dim=!!(hits&&!hits.has(s.id)),sel=selected===s.id;
+    const m=L.marker([s.lat,s.lng],{title:s.n,alt:s.n,zIndexOffset:sel?1000:dim?0:500,
+      icon:L.divIcon({className:'',html:`<span class="pin${sel?' sel':''}${dim?' dim':''}" style="background:${fill(s.r)}"></span>`,iconSize:[30,30],iconAnchor:[15,15]})});
+    m.on('click',()=>openStore(s.id));
+    (sel||(hits&&!dim)?loose:cluster).addLayer(m);
+  }
+}
+function focusStore(s){
+  const desk=matchMedia('(min-width:900px)').matches,z=Math.max(map.getZoom(),15);
+  const pt=map.project([s.lat,s.lng],z).add([desk?220:0,0]);
+  map.setView(map.unproject(pt,z),z);
+}
+let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),2800);}
+$('#reset').onclick=()=>map.setView(TURIN,START_Z());
+$('#near').onclick=()=>{
+  if(!navigator.geolocation){toast(t().locFail);return;}
+  toast(t().locating);
+  navigator.geolocation.getCurrentPosition(p=>{
+    const {latitude:lat,longitude:lng}=p.coords;
+    if(lat>44.98&&lat<45.14&&lng>7.56&&lng<7.80){
+      me={lat,lng};if(meMarker)meMarker.remove();
+      meMarker=L.marker([lat,lng],{interactive:false,icon:L.divIcon({className:'',html:'<span class="me"></span>',iconSize:[18,18],iconAnchor:[9,9]})}).addTo(map);
+      map.setView([lat,lng],15);toast(t().near);
+    } else {map.setView(TURIN,START_Z());toast(t().outside);}
+    renderPanel();
+  },()=>toast(t().locFail),{enableHighAccuracy:true,timeout:9000});
+};
+
+// ---------- Panel ----------
+function storesFor(ids){const set=new Set();ids.forEach(id=>S.forEach(s=>{if(s.inv[id]&&storeOk(s))set.add(s);}));return[...set];}
+const byDist=a=>me?a.slice().sort((x,y)=>km(me,x)-km(me,y)):a;
+function storeRow(s,extra){
+  return`<div class="store">${swatch(s.r)}
+    <button class="main" data-open="${s.id}"><div class="name">${esc(s.n)}</div><div class="meta">${esc(extra||regionNames(s.r)+', '+s.a)}</div></button>
+    ${extra?'':`<span class="dist">${fmtDist(s)}</span>`}
+    <button class="iconbtn" data-instore="${s.id}" aria-label="${esc(t().inStore(s.n))}" title="${esc(t().inStore(s.n))}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.5-4.5"/></svg></button>
+  </div>`;
+}
+function renderPanel(){
+  const el=$('#panel');
+  if(!query){
+    const list=byDist(S.filter(storeOk));
+    el.innerHTML=`<div class="panelhead"><h2>${t().stores(list.length)}</h2>${active.size?`<button class="linkbtn" data-clear>${t().showAll}</button>`:''}</div>`+
+      (list.length?list.map(s=>storeRow(s)).join(''):`<p class="sub">${t().noFilter}</p>`)+`<p class="note">${t().sample}</p>`;
+    return;
+  }
+  const ids=matchProducts(query).slice(0,6);
+  if(!ids.length){
+    el.innerHTML=`<div class="empty"><p><strong>${esc(t().noRes(query))}</strong></p><p class="hint">${t().reqHint}</p><button class="primary" data-request>${t().request}</button></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="panelhead"><h2>${t().results}</h2></div>`+ids.map(id=>{
+    const st=byDist(S.filter(s=>s.inv[id]&&storeOk(s)));
+    const aka=[P[id][lang==='it'?'en':'it'],...P[id].s].filter((v,i,a)=>norm(v)!==norm(pname(id))&&a.findIndex(x=>norm(x)===norm(v))===i).slice(0,3).join(', ');
+    return`<article class="product" id="p-${id}"><h3>${esc(pname(id))}</h3><div class="aka">${esc(aka)}</div>
+      <div class="sub" style="font-size:14px;font-weight:700;margin-bottom:2px">${t().foundIn(st.length)}</div>
+      ${st.map(s=>`<div class="store">${swatch(s.r)}<button class="main" data-open="${s.id}" data-p="${id}"><div class="name">${esc(s.n)}</div><div class="meta">${esc(s.a)}${me?', '+fmtDist(s):''}</div></button><span class="avail ${s.inv[id]}">${t().av[s.inv[id]]}</span></div>`).join('')}
+    </article>`;
+  }).join('');
+}
+$('#panel').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.open)openStore(b.dataset.open,b.dataset.p);
+  else if(b.dataset.instore)openStore(b.dataset.instore,null,true);
+  else if('clear' in b.dataset){active.clear();renderChips();renderPanel();render();}
+  else if('request' in b.dataset){
+    try{const k='globba-requests';const a=JSON.parse(localStorage.getItem(k)||'[]');a.push({q:query,at:new Date().toISOString()});localStorage.setItem(k,JSON.stringify(a));}catch(err){}
+    b.outerHTML=`<p><strong>${t().requested}</strong></p>`;
+  }
+});
+
+// ---------- Chips ----------
+function renderChips(){
+  const c=$('#chips');c.setAttribute('aria-label',t().filters);
+  c.innerHTML=`<button class="chip" data-r="" aria-pressed="${!active.size}">${t().all}</button>`+
+    Object.keys(R).map(k=>`<button class="chip" data-r="${k}" aria-pressed="${active.has(k)}"><span class="dot" style="background:${R[k].c}"></span>${R[k][lang]}</button>`).join('');
+}
+$('#chips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;const k=b.dataset.r;
+  if(!k)active.clear();else active.has(k)?active.delete(k):active.add(k);
+  renderChips();renderPanel();render();
+});
+
+// ---------- Search ----------
+const q=$('#q');
+q.addEventListener('input',()=>{query=q.value.trim();$('#qclear').hidden=!query;renderPanel();render();});
+$('#qclear').onclick=e=>{e.preventDefault();q.value='';query='';$('#qclear').hidden=true;renderPanel();render();q.focus();};
+
+// ---------- Store sheet ----------
+const sheet=$('#sheet'),scrim=$('#scrim');
+const ic={pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+  dir:'<path d="M12 2 21 12 12 22 3 12z"/><path d="M9 13v-2h5V9l2.5 2.5L14 14v-2"/>',wa:'<path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/>',
+  link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>'};
+const svg=(k,s=20)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic[k]}</svg>`;
+let lastFocus=null;
+function openStore(id,pid,focusSearch){
+  const s=S.find(x=>x.id===id);if(!s)return;
+  lastFocus=document.activeElement;selected=id;
+  const d=daysAgo(s.chk);
+  sheet.innerHTML=`<div class="bar" style="background:${s.r.length>1?`linear-gradient(90deg,${R[s.r[0]].c} 50%,${R[s.r[1]].c} 50%)`:R[s.r[0]].c}"></div><div class="grab"></div>
+    <button class="iconbtn close" data-close aria-label="${t().close}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <h2 id="sheettitle">${esc(s.n)}</h2>
+    <div class="tags">${s.r.map(k=>`<span class="tag"><span class="dot" style="background:${R[k].c}"></span>${R[k][lang]}</span>`).join('')}</div>
+    <div class="rows">
+      <div>${svg('pin',18)}<span>${esc(s.a)}, Torino${me?` <span class="dist">(${fmtDist(s)})</span>`:''}</span></div>
+      <div>${svg('clock',18)}<span>${esc(s.h[lang==='it'?0:1])}</span></div>
+      <div>${svg('check',18)}<span>${t().checked} ${t().ago(d)}</span></div>
+    </div>
+    ${d>60?`<div class="stale">${t().stale}</div>`:''}
+    <div class="actions">
+      <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">${svg('dir')}${t().directions}</a>
+      <a href="https://wa.me/${s.ph.replace(/\D/g,'')}" target="_blank" rel="noopener">${svg('wa')}${t().wa}</a>
+      <a href="tel:${s.ph.replace(/\s/g,'')}">${svg('phone')}${t().call}</a>
+      <button data-share>${svg('link')}<span>${t().share}</span></button>
+    </div>
+    <h3>${t().products}</h3>
+    <label class="instore"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.5-4.5"/></svg>
+      <input id="iq" type="search" placeholder="${esc(t().searchHere)}" aria-label="${esc(t().inStore(s.n))}" value="${esc(pid?'':(query||''))}"></label>
+    <div class="plist" id="plist"></div>`;
+  const draw=()=>{
+    const v=$('#iq').value.trim();
+    const all=Object.keys(s.inv);
+    const ms=v?matchProducts(v):null;
+    let list=ms?all.filter(id=>ms.includes(id)):all;
+    if(pid&&!v)list=[pid,...all.filter(x=>x!==pid)];
+    $('#plist').innerHTML=list.length?list.map(id=>`<div class="prow${id===pid||(ms&&ms.includes(id))?' hit':''}"><div><div class="pn">${esc(pname(id))}</div><div class="ps">${esc(P[id].s.slice(0,2).join(', '))}</div></div><span class="avail ${s.inv[id]}">${t().av[s.inv[id]]}</span></div>`).join('')
+      :`<p class="ps" style="padding:10px 2px">${t().notHere}</p>`;
+  };
+  $('#iq').addEventListener('input',draw);draw();
+  sheet.classList.add('on');scrim.classList.add('on');
+  focusStore(s);render();
+  if(location.hash!=='#s-'+id)history.replaceState(null,'','#s-'+id);
+  setTimeout(()=>(focusSearch?$('#iq'):sheet.querySelector('[data-close]')).focus(),60);
+}
+function closeStore(){
+  sheet.classList.remove('on');scrim.classList.remove('on');selected=null;render();
+  if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+  if(lastFocus&&lastFocus.focus)lastFocus.focus();
+}
+sheet.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if('close' in b.dataset)closeStore();
+  if('share' in b.dataset){const url=location.href.split('#')[0]+'#s-'+selected;
+    try{await navigator.clipboard.writeText(url);b.querySelector('span').textContent=t().copied;}catch(err){prompt(t().share,url);}}
+});
+scrim.onclick=closeStore;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('on'))closeStore();});
+
+// ---------- Language ----------
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===lang));
+  $('#tagline').textContent=t().tag;q.placeholder=t().ph;q.setAttribute('aria-label',t().ph);
+  $('#nearlbl').textContent=t().near;$('#reset').setAttribute('aria-label',t().reset);$('#reset').title=t().reset;
+  $('#mapmsg').innerHTML=`<strong>${t().noMapT}</strong>${t().noMap}`;
+  mapEl.setAttribute('aria-label',t().map);
+  renderChips();renderPanel();render();
+  if(selected){const id=selected;openStore(id);}
+}
+document.querySelector('.lang').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lang=b.dataset.l;try{localStorage.setItem('globba-lang',lang);}catch(err){}applyLang();});
+
+// ---------- Hash routes ----------
+function route(){
+  const h=location.hash.slice(1);
+  if(h.startsWith('s-')&&S.some(s=>s.id===h.slice(2)))openStore(h.slice(2));
+  else if(h.startsWith('p-')&&P[h.slice(2)]){q.value=pname(h.slice(2));query=q.value;$('#qclear').hidden=false;renderPanel();render();}
+}
+window.addEventListener('hashchange',route);
+
+// ---------- Init ----------
+if(matchMedia('(min-width:900px)').matches)$('#app').classList.add('desk');
+applyLang();route();
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>map.invalidateSize(),120);});
+})();
+</script>
+</body>
+</html>
