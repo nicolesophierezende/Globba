@@ -173,7 +173,7 @@ function start() {
     if (window.L) {
       const start = s.lat != null ? [s.lat, s.lng] : TURIN;
       pickMap = L.map('pickmap').setView(start, s.lat != null ? 16 : 12);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(pickMap);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap' }).addTo(pickMap);
       const place = (lat, lng, zoom) => {
         const color = regionById(form.r1.value)?.color || '#551B81';
         const icon = L.divIcon({ className: '', html: `<span class="pin" style="background:${color}"></span>`, iconSize: [26, 26], iconAnchor: [13, 13] });
