@@ -1,0 +1,10 @@
+---
+import ProductPage from '../../components/ProductPage.astro';
+import { loadData } from '../../lib/data.js';
+export async function getStaticPaths() {
+  const data = await loadData();
+  return Object.keys(data.P).filter((id) => data.S.some((s) => s.inv[id])).map((id) => ({ params: { id }, props: { id, data } }));
+}
+const { id, data } = Astro.props;
+---
+<ProductPage id={id} data={data} lang="it" />

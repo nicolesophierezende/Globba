@@ -1,0 +1,10 @@
+---
+import StorePage from '../../../components/StorePage.astro';
+import { loadData } from '../../../lib/data.js';
+export async function getStaticPaths() {
+  const data = await loadData();
+  return data.S.map((store) => ({ params: { id: store.id }, props: { store, data } }));
+}
+const { store, data } = Astro.props;
+---
+<StorePage store={store} data={data} lang="en" />

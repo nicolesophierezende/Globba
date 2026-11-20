@@ -1,0 +1,30 @@
+---
+// Shared <head> tags: install as an app (PWA), icons, sharing previews, analytics.
+import { SITE } from '../config.js';
+const { title, description, lang = 'it', alternates = null, noindex = false } = Astro.props;
+const site = Astro.site;
+const canonical = site ? new URL(Astro.url.pathname, site).href : null;
+const ogImage = site ? new URL('/icons/og.png', site).href : '/icons/og.png';
+---
+<meta name="description" content={description}>
+<meta name="theme-color" content={SITE.themeColor}>
+{noindex && <meta name="robots" content="noindex">}
+{canonical && <link rel="canonical" href={canonical}>}
+{alternates && site && Object.entries(alternates).map(([l, p]) => <link rel="alternate" hreflang={l} href={new URL(p, site).href}>)}
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content={SITE.name}>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content={SITE.name}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:locale" content={lang === 'en' ? 'en_GB' : 'it_IT'}>
+{canonical && <meta property="og:url" content={canonical}>}
+<meta property="og:image" content={ogImage}>
+<meta name="twitter:card" content="summary_large_image">
+{SITE.goatcounter && !noindex && <script is:inline data-goatcounter={`https://${SITE.goatcounter}.goatcounter.com/count`} async src="//gc.zgo.at/count.js"></script>}
+<script is:inline>
+if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+</script>

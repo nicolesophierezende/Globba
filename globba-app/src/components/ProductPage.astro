@@ -1,0 +1,32 @@
+---
+// One page per product: which stores in Turin have it.
+import Page from '../layouts/Page.astro';
+import { paths } from '../config.js';
+import { AV, fill, aka } from '../lib/text.js';
+const { id, data, lang } = Astro.props;
+const { R, P, S } = data;
+const p = P[id];
+const en = lang === 'en';
+const order = { u: 0, s: 1, z: 2 };
+const stores = S.filter((s) => s.inv[id]).sort((a, b) => order[a.inv[id]] - order[b.inv[id]] || a.n.localeCompare(b.n));
+const other = aka(p, lang);
+const title = en ? `Where to buy ${p.en} in Turin | Globba` : `Dove comprare ${p.it} a Torino | Globba`;
+const description = en
+  ? `${p.en}${other.length ? ` (${other.slice(0, 3).join(', ')})` : ''}: ${stores.length} store${stores.length === 1 ? '' : 's'} in Turin. Addresses, availability and directions.`
+  : `${p.it}${other.length ? ` (${other.slice(0, 3).join(', ')})` : ''}: ${stores.length === 1 ? '1 negozio' : `${stores.length} negozi`} a Torino. Indirizzi, disponibilità e indicazioni.`;
+---
+<Page title={title} description={description} lang={lang} alternates={{ it: paths.product('it', id), en: paths.product('en', id) }}>
+  <h1>{en ? `Where to buy ${p.en} in Turin` : `Dove trovare ${p.it} a Torino`}</h1>
+  {other.length > 0 && <p class="muted" style="margin-top:0">{en ? 'Also known as' : 'Conosciuto anche come'}: {other.join(', ')}</p>}
+  <div class="card list" style="padding:4px 12px">
+    <div class="muted" style="font-size:14px;font-weight:700;padding:10px 4px 0">{en ? (stores.length === 1 ? 'In 1 store' : `In ${stores.length} stores`) : (stores.length === 1 ? 'In 1 negozio' : `In ${stores.length} negozi`)}</div>
+    {stores.map((s) => (
+      <a class="row" href={paths.store(lang, s.id)}>
+        <span class="swatch" style={`background:${fill(R, s.r)}`} aria-hidden="true"></span>
+        <div class="main"><div class="name">{s.n}</div><div class="meta">{s.a}</div></div>
+        <span class={`avail ${s.inv[id]}`}>{AV[lang][s.inv[id]]}</span>
+      </a>
+    ))}
+  </div>
+  <p><a class="primary" href={`${en ? '/?lang=en' : '/'}#p-${id}`}>{en ? 'See them on the map' : 'Vedili sulla mappa'}</a></p>
+</Page>

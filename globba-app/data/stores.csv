@@ -1,0 +1,3 @@
+id,name,address,lat,lng,phone,whatsapp,regions,hours_it,hours_en,last_checked,published,notes
+el-condor,Mercado El Cóndor,Via Nizza 112,45.0505,7.6745,+39 011 555 0101,,"{""latam""}","Lun–Sab 9–20, Dom 10–13","Mon–Sat 9–20, Sun 10–13",2026-11-12,true,EXAMPLE ROW – delete
+sabor-latino,Tienda Sabor Latino,Corso Giulio Cesare 48,45.084,7.689,+39 011 555 0102,,"{""latam""}",Tutti i giorni 9–21,Every day 9–21,2026-11-03,true,EXAMPLE ROW – delete

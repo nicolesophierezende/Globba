@@ -1,0 +1,108 @@
+---
+// Private admin page: add and edit stores, products and what each store sells.
+// Protected by Supabase login + the "admins" table (see supabase/schema.sql).
+import { hasSupabase } from '../../lib/data.js';
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Globba admin</title>
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style is:global>
+:root{--bg:#EAF9FC;--surface:#FFFFFF;--ink:#2A0E45;--muted:#5E5373;--line:#C6E8F0;--primary:#551B81;--on-primary:#FFFFFF;--accent:#FF8C1E;--chip:#D8F6FC;--focus:#BA3F6A;--danger:#B3261E;color-scheme:light}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px}
+.wrap{max-width:1000px;margin:0 auto;padding:0 16px 40px}
+header{display:flex;align-items:center;gap:12px;padding:14px 0}
+.logo{color:var(--primary);font-weight:800;font-size:26px;letter-spacing:-.03em;line-height:1;display:flex;align-items:center;text-decoration:none}
+.logo .o{display:inline-block;width:.62em;height:.62em;border-radius:50%;margin:0 .02em;transform:translateY(.06em);background:conic-gradient(#FF8C1E 0 60deg,#BA3F6A 0 120deg,#F5CE24 0 180deg,#14918A 0 240deg,#551B81 0 300deg,#3B82C4 0)}
+.badge{background:var(--primary);color:#fff;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700}
+.who{margin-left:auto;color:var(--muted);font-size:14px;display:flex;gap:10px;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.tabs button{border:0;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:999px;padding:7px 14px;font-weight:700}
+.tabs button[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:none}
+.btn{border:0;background:var(--primary);color:#fff;border-radius:12px;padding:10px 16px;font-weight:700}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn.danger{background:#FBE3E1;color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.linkbtn{border:0;background:none;text-decoration:underline;text-underline-offset:3px;padding:0;color:inherit}
+label.f{display:grid;gap:4px;font-size:14px;font-weight:700}
+label.f span.h{font-weight:400;color:var(--muted);font-size:13px}
+input[type=text],input[type=email],input[type=number],input[type=date],input[type=search],select,textarea{border:2px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff;font-weight:400;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none}
+.grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.grid .full{grid-column:1/-1}
+@media (max-width:640px){.grid{grid-template-columns:1fr}}
+.row{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .main{flex:1;min-width:0}
+.row .name{font-weight:700}
+.row .meta{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.swatch{flex:none;width:14px;height:14px;border-radius:50%}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:180px}
+#pickmap{height:260px;border-radius:14px;border:1px solid var(--line);margin-top:4px}
+.inv{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:0 10px}
+.inv .row{padding:6px 2px}
+.inv select{width:auto}
+.inv .row.on .name{color:var(--primary)}
+.msg{border-radius:12px;padding:10px 12px;margin:10px 0;font-size:15px}
+.msg.ok{background:#D8F0E3;color:#145A36}
+.msg.err{background:#FBE3E1;color:var(--danger)}
+.msg.info{background:var(--chip)}
+.muted{color:var(--muted)}
+.count{font-variant-numeric:tabular-nums;font-weight:700;min-width:2.5em;text-align:right}
+.pin{display:block;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(42,14,69,.4)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="/">Gl<span class="o" aria-hidden="true"></span>bba</a><span class="badge">admin</span>
+    <div class="who" id="who" hidden><span id="whoemail"></span><button class="linkbtn" id="logout">Log out</button></div>
+  </header>
+
+  {!hasSupabase && (
+    <div class="card">
+      <h2 style="margin-top:0">Supabase is not connected yet</h2>
+      <p>Add <code>PUBLIC_SUPABASE_URL</code> and <code>PUBLIC_SUPABASE_ANON_KEY</code> to your <code>.env</code> file (on your computer) and in Netlify → Site configuration → Environment variables, then rebuild. See README.md, step 2.</p>
+    </div>
+  )}
+
+  <div id="login" class="card" hidden>
+    <h2 style="margin-top:0">Log in</h2>
+    <p class="muted">We’ll email you a login link. Only emails in the <code>admins</code> table can make changes.</p>
+    <form id="loginform" class="toolbar">
+      <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
+      <button class="btn">Send link</button>
+    </form>
+    <div id="loginmsg"></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs" role="group">
+      <button data-tab="stores" aria-pressed="true">Stores</button>
+      <button data-tab="products" aria-pressed="false">Products</button>
+      <button data-tab="requests" aria-pressed="false">Requests & searches</button>
+    </div>
+    <div id="flash"></div>
+    <section id="view"></section>
+  </div>
+</div>
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>import '../../scripts/admin.js';</script>
+</body>
+</html>

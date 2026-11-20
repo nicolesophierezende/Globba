@@ -1,0 +1,43 @@
+---
+// Lists of all stores (grouped by region) or all products.
+import Page from '../layouts/Page.astro';
+import { paths } from '../config.js';
+import { fill } from '../lib/text.js';
+const { kind, data, lang } = Astro.props;
+const { R, P, S } = data;
+const en = lang === 'en';
+const isStores = kind === 'stores';
+const title = isStores
+  ? (en ? 'International grocery stores in Turin | Globba' : 'Negozi alimentari internazionali a Torino | Globba')
+  : (en ? 'International products in Turin: where to find them | Globba' : 'Prodotti internazionali a Torino: dove trovarli | Globba');
+const description = isStores
+  ? (en ? `All ${S.length} international grocery stores on Globba, grouped by region.` : `Tutti i ${S.length} negozi alimentari internazionali su Globba, divisi per regione.`)
+  : (en ? `All ${Object.keys(P).length} products on Globba and the stores in Turin that sell them.` : `Tutti i ${Object.keys(P).length} prodotti su Globba e i negozi di Torino che li vendono.`);
+const groups = Object.keys(R).map((k) => ({ k, stores: S.filter((s) => s.r[0] === k).sort((a, b) => a.n.localeCompare(b.n)) })).filter((g) => g.stores.length);
+const products = Object.keys(P).map((id) => ({ id, n: S.filter((s) => s.inv[id]).length })).filter((p) => p.n).sort((a, b) => P[a.id][lang].localeCompare(P[b.id][lang]));
+---
+<Page title={title} description={description} lang={lang} alternates={{ it: isStores ? paths.stores('it') : paths.products('it'), en: isStores ? paths.stores('en') : paths.products('en') }}>
+  <h1>{isStores ? (en ? 'All stores' : 'Tutti i negozi') : (en ? 'All products' : 'Tutti i prodotti')}</h1>
+  {isStores ? groups.map((g) => (
+    <>
+      <h2 style="display:flex;align-items:center;gap:8px"><span class="dot" style={`width:14px;height:14px;background:${R[g.k].c}`}></span>{R[g.k][lang]}</h2>
+      <div class="card list" style="padding:4px 12px">
+        {g.stores.map((s) => (
+          <a class="row" href={paths.store(lang, s.id)}>
+            <span class="swatch" style={`background:${fill(R, s.r)}`} aria-hidden="true"></span>
+            <div class="main"><div class="name">{s.n}</div><div class="meta">{s.a}</div></div>
+          </a>
+        ))}
+      </div>
+    </>
+  )) : (
+    <div class="card list" style="padding:4px 12px">
+      {products.map((p) => (
+        <a class="row" href={paths.product(lang, p.id)}>
+          <div class="main"><div class="name">{P[p.id][lang]}</div><div class="meta">{P[p.id].s.slice(0, 3).join(', ')}</div></div>
+          <span class="muted" style="font-size:14px">{en ? (p.n === 1 ? '1 store' : `${p.n} stores`) : (p.n === 1 ? '1 negozio' : `${p.n} negozi`)}</span>
+        </a>
+      ))}
+    </div>
+  )}
+</Page>
