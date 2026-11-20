@@ -77,12 +77,12 @@ const map=L.map('lmap',{zoomControl:false,zoomSnap:0.5,zoomDelta:1,wheelPxPerZoo
   maxBounds:[[44.93,7.45],[45.20,7.90]],maxBoundsViscosity:0.8}).setView(TURIN,START_Z());
 L.control.zoom({position:'topleft'}).addTo(map);
 const ATTR='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const CARTO={name:'carto',url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',o:{subdomains:'abcd',maxZoom:20,attribution:ATTR+' &copy; <a href="https://carto.com/attributions">CARTO</a>'}};
 const ESRI={name:'esri',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',o:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, '+ATTR}};
 const OSMFR={name:'osmfr',url:'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',o:{subdomains:'abc',maxZoom:19,attribution:ATTR+' &copy; OSM France'}};
 const OSM={name:'osm',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',o:{maxZoom:19,attribution:ATTR}};
-// Opened as a local file, some map services refuse to answer, so start with the ones that don't mind.
-const SOURCES=location.protocol==='file:'?[ESRI,OSMFR,CARTO,OSM]:[CARTO,ESRI,OSMFR,OSM];
+// CARTO was removed: it now shows "API key required" images instead of the map.
+// Opened as a local file, OpenStreetMap refuses to answer, so it goes last there.
+const SOURCES=location.protocol==='file:'?[ESRI,OSMFR,OSM]:[ESRI,OSM,OSMFR];
 let srcIdx=0,tiles=null,loaded=0,failed=0,waitT=null;
 function nextSource(){ if(srcIdx<SOURCES.length-1)useSource(srcIdx+1); else $('#mapmsg').hidden=false; }
 function useSource(i){
