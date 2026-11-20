@@ -1,0 +1,18 @@
+# Rebuilds the site every night so store and product pages include the latest changes made in /admin.
+# Setup: Netlify → Site configuration → Build & deploy → Build hooks → Add build hook,
+# then GitHub → Settings → Secrets and variables → Actions → New secret "NETLIFY_BUILD_HOOK" with that URL.
+name: Nightly rebuild
+on:
+  schedule:
+    - cron: '17 2 * * *'   # every day around 03:17 Turin time
+  workflow_dispatch: {}     # also lets you run it by hand from the Actions tab
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Netlify build
+        env:
+          HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "NETLIFY_BUILD_HOOK secret is not set, skipping."; exit 0; fi
+          curl -fsS -X POST -d '{}' "$HOOK"

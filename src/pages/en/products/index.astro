@@ -1,0 +1,6 @@
+---
+import ListPage from '../../../components/ListPage.astro';
+import { loadData } from '../../../lib/data.js';
+const data = await loadData();
+---
+<ListPage kind="products" data={data} lang="en" />

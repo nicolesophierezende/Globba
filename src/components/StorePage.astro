@@ -1,0 +1,55 @@
+---
+// One page per store (Italian and English), readable by Google and shareable by link.
+import Page from '../layouts/Page.astro';
+import { paths, SITE } from '../config.js';
+import { AV, fill, daysAgo, fmtDate, svg } from '../lib/text.js';
+const { store: s, data, lang } = Astro.props;
+const { R, P } = data;
+const en = lang === 'en';
+const regions = s.r.map((k) => R[k][lang]).join(', ');
+const title = `${s.n} – ${en ? 'international grocery store in Turin' : 'negozio internazionale a Torino'} | Globba`;
+const description = en
+  ? `${s.n}, ${s.a}, Turin. ${regions} products: ${Object.keys(s.inv).slice(0, 5).map((id) => P[id].en).join(', ')}. Hours, phone and directions.`
+  : `${s.n}, ${s.a}, Torino. Prodotti ${regions}: ${Object.keys(s.inv).slice(0, 5).map((id) => P[id].it).join(', ')}. Orari, telefono e indicazioni.`;
+const order = { u: 0, s: 1, z: 2 };
+const products = Object.keys(s.inv).sort((a, b) => order[s.inv[a]] - order[s.inv[b]] || P[a][lang].localeCompare(P[b][lang]));
+const d = daysAgo(s.chk);
+const bar = s.r.length > 1 ? `linear-gradient(90deg,${R[s.r[0]].c} 50%,${R[s.r[1]].c} 50%)` : R[s.r[0]].c;
+const mapLink = `${en ? '/?lang=en' : '/'}#s-${s.id}`;
+const jsonld = {
+  '@context': 'https://schema.org', '@type': 'GroceryStore', name: s.n,
+  address: { '@type': 'PostalAddress', streetAddress: s.a, addressLocality: 'Torino', addressCountry: 'IT' },
+  geo: { '@type': 'GeoCoordinates', latitude: s.lat, longitude: s.lng },
+  telephone: s.ph || undefined,
+  url: Astro.site ? new URL(paths.store(lang, s.id), Astro.site).href : undefined,
+};
+---
+<Page title={title} description={description} lang={lang} alternates={{ it: paths.store('it', s.id), en: paths.store('en', s.id) }} jsonld={jsonld}>
+  <div class="card" style="padding-top:0;overflow:hidden">
+    <div style={`height:8px;margin:0 -16px 14px;background:${bar}`}></div>
+    <h1>{s.n}</h1>
+    <div class="tags">{s.r.map((k) => <span class="tag"><span class="dot" style={`background:${R[k].c}`}></span>{R[k][lang]}</span>)}</div>
+    <div class="rows">
+      <div><Fragment set:html={svg('pin', 18)} /><span>{s.a}, Torino</span></div>
+      {s.h[en ? 1 : 0] && <div><Fragment set:html={svg('clock', 18)} /><span>{s.h[en ? 1 : 0]}</span></div>}
+      <div><Fragment set:html={svg('check', 18)} /><span>{en ? 'Checked on' : 'Verificato il'} {fmtDate(s.chk, lang)}</span></div>
+    </div>
+    {d > 60 && <div class="stale">{en ? 'Last checked over 60 days ago: call before you go.' : 'Dati verificati più di 60 giorni fa: meglio chiamare prima di andare.'}</div>}
+    <div class="actions">
+      <a href={`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`} target="_blank" rel="noopener"><Fragment set:html={svg('dir')} />{en ? 'Directions' : 'Percorso'}</a>
+      {(s.wa || s.ph) && <a href={`https://wa.me/${(s.wa || s.ph).replace(/\D/g, '')}`} target="_blank" rel="noopener"><Fragment set:html={svg('wa')} />WhatsApp</a>}
+      {s.ph && <a href={`tel:${s.ph.replace(/\s/g, '')}`}><Fragment set:html={svg('phone')} />{en ? 'Call' : 'Chiama'}</a>}
+      <a href={mapLink}><Fragment set:html={svg('map')} />{en ? 'Map' : 'Mappa'}</a>
+    </div>
+  </div>
+  <h2>{en ? 'Key products' : 'Prodotti principali'}</h2>
+  <div class="card list" style="padding:4px 12px">
+    {products.map((id) => (
+      <a class="row" href={paths.product(lang, id)}>
+        <div class="main"><div class="name">{P[id][lang]}</div><div class="meta">{P[id].s.slice(0, 2).join(', ')}</div></div>
+        <span class={`avail ${s.inv[id]}`}>{AV[lang][s.inv[id]]}</span>
+      </a>
+    ))}
+  </div>
+  {data.sample && <p class="muted" style="font-size:13px">{en ? 'Prototype: stores are invented examples, not real.' : 'Prototipo: i negozi sono esempi inventati, non reali.'}</p>}
+</Page>

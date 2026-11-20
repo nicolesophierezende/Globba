@@ -1,0 +1,59 @@
+---
+// Privacy policy (GDPR). Read it, complete the parts marked in the README, and have it checked before launch.
+import Page from '../layouts/Page.astro';
+import { SITE, paths } from '../config.js';
+const { lang } = Astro.props;
+const en = lang === 'en';
+const updated = '20/11/2026';
+---
+<Page title={en ? 'Privacy policy | Globba' : 'Informativa sulla privacy | Globba'} description={en ? 'How Globba handles your data.' : 'Come Globba tratta i tuoi dati.'} lang={lang} alternates={{ it: paths.privacy('it'), en: paths.privacy('en') }}>
+{en ? (
+  <>
+    <h1>Privacy policy</h1>
+    <p class="muted">Last updated: {updated}</p>
+    <p><strong>In short:</strong> Globba has no accounts, uses no tracking or advertising cookies and does not sell data. We only keep the text of product searches and requests, without anything that identifies you.</p>
+    <h2>Who is responsible</h2>
+    <p>{SITE.owner}. Contact: <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
+    <h2>What we collect</h2>
+    <ul>
+      <li><strong>Product requests</strong> (the “Request this product” button) and <strong>searches with no results</strong>: only the text you typed, the language and the date. They help us know which products people look for. Legal basis: legitimate interest (Art. 6(1)(f) GDPR).</li>
+      <li><strong>Visit statistics</strong>: if enabled, we use GoatCounter, which counts visits without cookies and without storing IP addresses or personal data.</li>
+      <li><strong>Your location</strong>: only if you tap “Near me”. It is used on your device to sort stores by distance and is never sent to us.</li>
+    </ul>
+    <h2>Stored on your device</h2>
+    <p>The site saves your language choice and your product requests in your browser’s local storage, and keeps a copy of pages for offline use. Nothing of this is a tracking cookie, and you can delete it by clearing your browser data.</p>
+    <h2>Third-party services</h2>
+    <p>To show the site, your browser connects to: Netlify (hosting), Supabase (database, EU), map tiles from CARTO / Esri / OpenStreetMap, Google Fonts (font), cdnjs (map library). Like any website, these services receive your IP address in order to deliver the content. Directions, WhatsApp and calls open external apps with their own policies.</p>
+    <h2>How long we keep data</h2>
+    <p>Search and request texts are kept for up to 24 months and then deleted or aggregated.</p>
+    <h2>Your rights</h2>
+    <p>You can ask for access, correction, deletion or limitation, and object to processing, by writing to the address above. You can also complain to the Italian Data Protection Authority (<a href="https://www.garanteprivacy.it" rel="noopener">garanteprivacy.it</a>).</p>
+    <h2>Store owners</h2>
+    <p>Store information comes from public sources and visits. If you own a listed store and want to correct or remove it, write to us.</p>
+  </>
+) : (
+  <>
+    <h1>Informativa sulla privacy</h1>
+    <p class="muted">Ultimo aggiornamento: {updated}</p>
+    <p><strong>In breve:</strong> Globba non ha account, non usa cookie di tracciamento o pubblicità e non vende dati. Conserviamo solo il testo delle ricerche e delle richieste di prodotti, senza nulla che ti identifichi.</p>
+    <h2>Titolare del trattamento</h2>
+    <p>{SITE.owner}. Contatto: <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
+    <h2>Cosa raccogliamo</h2>
+    <ul>
+      <li><strong>Richieste di prodotti</strong> (pulsante “Richiedi questo prodotto”) e <strong>ricerche senza risultati</strong>: solo il testo scritto, la lingua e la data. Ci aiutano a capire quali prodotti cercano le persone. Base giuridica: legittimo interesse (art. 6, par. 1, lett. f GDPR).</li>
+      <li><strong>Statistiche di visita</strong>: se attive, usiamo GoatCounter, che conta le visite senza cookie e senza salvare indirizzi IP o dati personali.</li>
+      <li><strong>La tua posizione</strong>: solo se tocchi “Vicino a me”. Viene usata sul tuo dispositivo per ordinare i negozi per distanza e non ci viene mai inviata.</li>
+    </ul>
+    <h2>Dati salvati sul tuo dispositivo</h2>
+    <p>Il sito salva nella memoria del browser la lingua scelta e le tue richieste di prodotti, e conserva una copia delle pagine per l’uso offline. Nessuno di questi è un cookie di tracciamento; puoi cancellarli eliminando i dati del browser.</p>
+    <h2>Servizi di terze parti</h2>
+    <p>Per mostrare il sito, il tuo browser si collega a: Netlify (hosting), Supabase (database, UE), mappe di CARTO / Esri / OpenStreetMap, Google Fonts (carattere), cdnjs (libreria della mappa). Come per qualsiasi sito, questi servizi ricevono il tuo indirizzo IP per poter inviare i contenuti. Percorso, WhatsApp e chiamate aprono app esterne con le proprie regole.</p>
+    <h2>Per quanto tempo</h2>
+    <p>I testi di ricerche e richieste sono conservati fino a 24 mesi, poi cancellati o aggregati.</p>
+    <h2>I tuoi diritti</h2>
+    <p>Puoi chiedere accesso, rettifica, cancellazione o limitazione, e opporti al trattamento, scrivendo all’indirizzo sopra. Puoi anche presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" rel="noopener">garanteprivacy.it</a>).</p>
+    <h2>Proprietari dei negozi</h2>
+    <p>Le informazioni sui negozi provengono da fonti pubbliche e visite. Se sei il proprietario di un negozio e vuoi correggere o rimuovere i dati, scrivici.</p>
+  </>
+)}
+</Page>

@@ -1,0 +1,92 @@
+---
+// Layout for the simple content pages (store pages, product pages, lists, privacy).
+// Uses the same colors, font and logo as the map app.
+import HeadExtras from '../components/HeadExtras.astro';
+import { SITE, paths } from '../config.js';
+const { title, description, lang = 'it', alternates, noindex = false, jsonld = null } = Astro.props;
+const other = lang === 'it' ? 'en' : 'it';
+const otherHref = alternates?.[other];
+const en = lang === 'en';
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{title}</title>
+<HeadExtras title={title} description={description} lang={lang} alternates={alternates} noindex={noindex} />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+{jsonld && <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonld).replace(/</g, '\\u003c')}></script>}
+<style is:global>
+:root{
+  --bg:#EAF9FC; --surface:#FFFFFF; --ink:#2A0E45; --muted:#5E5373; --line:#C6E8F0;
+  --primary:#551B81; --on-primary:#FFFFFF; --accent:#FF8C1E; --sun:#F5CE24; --berry:#BA3F6A;
+  --chip:#D8F6FC; --focus:#BA3F6A;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px}
+a{color:var(--primary);text-underline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 0 10px}
+.logo{color:var(--primary);font-weight:800;font-size:30px;letter-spacing:-.03em;line-height:1;display:flex;align-items:center;text-decoration:none}
+.logo .o{display:inline-block;width:.62em;height:.62em;border-radius:50%;margin:0 .02em;transform:translateY(.06em);
+  background:conic-gradient(#FF8C1E 0 60deg,#BA3F6A 0 120deg,#F5CE24 0 180deg,#14918A 0 240deg,#551B81 0 300deg,#3B82C4 0)}
+.tagline{color:var(--muted);font-size:14px;margin-top:2px}
+.langlink{margin-left:auto;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px;text-decoration:none;color:var(--ink)}
+main{padding:8px 0 28px}
+h1{font-size:30px;line-height:1.1;letter-spacing:-.02em;font-weight:800;margin:10px 0 8px}
+h2{font-size:20px;letter-spacing:-.01em;margin:26px 0 8px}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tag{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:500;background:var(--chip);border-radius:999px;padding:4px 10px 4px 7px;text-decoration:none;color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.swatch{flex:none;width:16px;height:16px;border-radius:50%}
+.rows{display:grid;gap:8px;margin:4px 0 14px;font-size:15px}
+.rows div{display:flex;gap:10px;align-items:flex-start}
+.rows svg{flex:none;margin-top:2px;color:var(--muted)}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 4px}
+.actions a{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--ink);background:var(--chip);border-radius:14px;padding:10px 4px;font-size:12.5px;font-weight:700;text-align:center}
+.list .row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.list .row:last-child{border-bottom:0}
+.list .main{flex:1;min-width:0}
+.list .name{font-weight:700;font-size:17px;line-height:1.25}
+.list .meta{color:var(--muted);font-size:14px}
+.avail{flex:none;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.avail.u{background:#D8F0E3;color:#145A36}
+.avail.s{background:#FCEBC8;color:#7A4B00}
+.avail.z{background:#E5E0F5;color:#4B3487}
+.stale{background:#FCEBC8;color:#6B4100;border-radius:12px;padding:9px 12px;font-size:14px;margin:8px 0}
+.primary{display:inline-block;border:0;background:var(--primary);color:var(--on-primary);border-radius:12px;padding:11px 16px;font-weight:700;text-decoration:none}
+footer{border-top:1px solid var(--line);padding:16px 0 28px;color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:6px 16px}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <a class="logo" href={paths.home(lang)} aria-label={en ? 'Globba, back to the map' : 'Globba, torna alla mappa'}>Gl<span class="o" aria-hidden="true"></span>bba</a>
+      <div class="tagline">{SITE.tagline[lang]}</div>
+    </div>
+    {otherHref && <a class="langlink" href={otherHref} hreflang={other} lang={other}>{other.toUpperCase()}</a>}
+  </header>
+  <main>
+    <slot />
+  </main>
+  <footer>
+    <a href={paths.home(lang)}>{en ? 'Map' : 'Mappa'}</a>
+    <a href={paths.stores(lang)}>{en ? 'All stores' : 'Tutti i negozi'}</a>
+    <a href={paths.products(lang)}>{en ? 'All products' : 'Tutti i prodotti'}</a>
+    <a href={paths.privacy(lang)}>Privacy</a>
+  </footer>
+</div>
+</body>
+</html>
