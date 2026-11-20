@@ -26,7 +26,7 @@ Without Supabase, the site runs with the invented sample stores, so you can try 
 
 ## Step 1 – Run it on your computer
 
-You need [Node.js](https://nodejs.org) 22 or newer.
+You need [Node.js](https://nodejs.org) 20 or newer (the LTS version is fine).
 
 ```bash
 npm install
